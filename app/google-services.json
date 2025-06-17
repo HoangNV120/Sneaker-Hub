@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "291473125235",
+    "project_id": "sneaker-hub-70299",
+    "storage_bucket": "sneaker-hub-70299.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:291473125235:android:b30ca6abf2415945469f06",
+        "android_client_info": {
+          "package_name": "com.prm392_g1.sneakerhub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIe30Urb1hoUiOS7ZK15v7LrBhAAh0i0o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
