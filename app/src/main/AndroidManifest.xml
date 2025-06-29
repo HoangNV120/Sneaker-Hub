@@ -24,6 +24,10 @@
         <activity
             android:name=".AdminActivity"
             android:exported="true" />
+        <activity
+            android:name=".DatabaseTestActivity"
+            android:exported="true"
+            android:label="Database Test" />
     </application>
 
 </manifest>

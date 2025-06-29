@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.prm392_g1.sneakerhub.fragments.HomeFragment;
+import com.prm392_g1.sneakerhub.fragments.HomeAdminFragment;
 import com.prm392_g1.sneakerhub.fragments.ManageFragment;
 import com.prm392_g1.sneakerhub.fragments.ProfileFragment;
 import com.prm392_g1.sneakerhub.fragments.StatisticsFragment;
@@ -28,7 +28,7 @@ public class AdminActivity extends AppCompatActivity implements BottomNavigation
 
         // Set default fragment to Home
         if (savedInstanceState == null) {
-            loadFragment(new HomeFragment());
+            loadFragment(new HomeAdminFragment());
             bottomNavigationView.setSelectedItemId(R.id.navigation_home);
         }
     }
@@ -39,7 +39,7 @@ public class AdminActivity extends AppCompatActivity implements BottomNavigation
         int itemId = item.getItemId();
 
         if (itemId == R.id.navigation_home) {
-            fragment = new HomeFragment();
+            fragment = new HomeAdminFragment();
         } else if (itemId == R.id.navigation_statistics) {
             fragment = new StatisticsFragment();
         } else if (itemId == R.id.navigation_manage) {

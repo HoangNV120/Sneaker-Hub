@@ -14,7 +14,7 @@ import androidx.fragment.app.Fragment;
 
 import com.prm392_g1.sneakerhub.R;
 
-public class HomeFragment extends Fragment {
+public class HomeAdminFragment extends Fragment {
 
     private TextView textSalesAmount;
     private Button btnAddProduct;
@@ -23,7 +23,7 @@ public class HomeFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_home, container, false);
+        return inflater.inflate(R.layout.fragment_home_admin, container, false);
     }
 
     @Override
