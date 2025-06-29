@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">Sneaker Hub</string>
+
+    <!-- Bottom Navigation Menu -->
+    <string name="menu_home">Home</string>
+    <string name="menu_statistics">Statistics</string>
+    <string name="menu_manage">Manage</string>
+    <string name="menu_profile">Profile</string>
+
+    <!-- Statistics Fragment -->
+    <string-array name="period_options">
+        <item>Daily</item>
+        <item>Weekly</item>
+        <item>Monthly</item>
+        <item>Yearly</item>
+    </string-array>
 </resources>
