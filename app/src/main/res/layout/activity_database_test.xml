@@ -20,6 +20,47 @@
             android:gravity="center"
             android:layout_marginBottom="24dp" />
 
+        <!-- User Database Display Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📊 User Database"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnRefreshUsers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🔄 Refresh User Database"
+            android:layout_marginBottom="16dp" />
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:background="#F0F8FF"
+            android:padding="8dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/tvUserDatabase"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Loading user database..."
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:textColor="#333333" />
+
+        </ScrollView>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#CCCCCC"
+            android:layout_marginVertical="16dp" />
+
         <!-- User Test Section -->
         <TextView
             android:layout_width="match_parent"
@@ -113,6 +154,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Get All Users"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnRefreshUsers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🔄 Refresh User Database"
             android:layout_marginBottom="16dp" />
 
         <!-- Divider -->
@@ -222,6 +270,39 @@
             android:layout_height="1dp"
             android:background="#CCCCCC"
             android:layout_marginVertical="16dp" />
+
+        <!-- Cart Testing Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🛒 Cart Testing"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/btnTestCart"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🛒 Test Cart"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btnAddToCart"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="➕ Add to Cart"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
 
         <!-- Clear All Button -->
         <Button

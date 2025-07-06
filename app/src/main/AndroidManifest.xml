@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -13,7 +15,7 @@
         android:theme="@style/Theme.SneakerHub"
         tools:targetApi="31">
         <activity
-            android:name=".RegisterActivity"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,8 +23,23 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".RegisterActivity"
             android:exported="false" />
+        <activity
+            android:name=".DatabaseTestActivity"
+            android:exported="false"
+            android:label="Database Test"
+            android:theme="@style/Theme.SneakerHub" />
+        <activity
+            android:name=".CartActivity"
+            android:exported="false"
+            android:label="Shopping Cart"
+            android:theme="@style/Theme.SneakerHub" />
+        <activity
+            android:name=".OrderHistoryActivity"
+            android:exported="false"
+            android:label="Order History"
+            android:theme="@style/Theme.SneakerHub" />
     </application>
 
-</manifest>
+    </manifest>

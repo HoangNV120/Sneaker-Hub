@@ -23,11 +23,18 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        // Setup database test button
+        // Find the database test button
         Button btnDatabaseTest = findViewById(R.id.btnDatabaseTest);
         btnDatabaseTest.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, DatabaseTestActivity.class);
             startActivity(intent);
         });
+
+        // Automatically launch CartActivity when app starts
+        Intent intent = new Intent(MainActivity.this, CartActivity.class);
+        startActivity(intent);
+        
+        // Optional: Close MainActivity after launching CartActivity
+        // finish();
     }
 }

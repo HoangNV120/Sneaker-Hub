@@ -1,0 +1,63 @@
+Bảng: order
+
+id: uuid, PK
+
+product_id: uuid, FK
+
+user_id: uuid, FK
+
+amount: Integer
+
+total_price: bigdecimal
+
+status: varchar(255)
+
+short_code: varchar(255)
+
+shipping_address: varchar(512)
+
+shipping_phone: varchar(255)
+
+note: text
+
+created_date: timestamp
+
+updated_date: timestamp
+
+Bảng: order_history
+
+id: uuid, PK
+
+order_id: uuid, FK
+
+status: varchar(255)
+
+amount: Integer
+
+total_price: bigdecimal
+
+shipping_address: varchar(512)
+
+shipping_phone: varchar(255)
+
+created_date: timestamp
+
+updated_date: timestamp
+
+Cơ chế của chức năng View current items in the cart
+Chức năng này sử dụng bảng order với status là status
+status có các chức năng sau
+Is-in-card
+Pending
+In-progress
+Completed
+
+Chức năng
+View current items in the cart:
+-Sẽ hiển thị chức năng khi đang trong trạng thái Is-in-card
+-Có thể update được số lượng hoặc Hủy đơn, hoặc chốt đơn
+View History Cart:
+-Sau khi thực hiện hành động check out ở trang View current items in cart thì sẽ lưu sản phẩm sang
+bên này, 
+-Status sẽ thay đổi dựa vào hành động Hủy - hay chốt đơn, và thời gian chốt sẽ sửa lại thời gian
+-Các trường khác dữ nguyên

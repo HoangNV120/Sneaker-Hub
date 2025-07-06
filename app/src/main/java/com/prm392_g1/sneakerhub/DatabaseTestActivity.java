@@ -1,5 +1,6 @@
 package com.prm392_g1.sneakerhub;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
@@ -8,35 +9,105 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.textfield.TextInputEditText;
 import com.prm392_g1.sneakerhub.entities.User;
 import com.prm392_g1.sneakerhub.entities.Product;
+import com.prm392_g1.sneakerhub.entities.Order;
 import com.prm392_g1.sneakerhub.repositories.UserRepository;
 import com.prm392_g1.sneakerhub.repositories.ProductRepository;
+import com.prm392_g1.sneakerhub.repositories.OrderRepository;
 import java.util.List;
 import java.util.UUID;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import com.prm392_g1.sneakerhub.enums.StatusEnum;
 
 public class DatabaseTestActivity extends AppCompatActivity {
 
     // UI Components
     private TextInputEditText etUserId, etUserName, etUserEmail, etUserPhone;
     private TextInputEditText etProductId, etProductName, etProductPrice, etProductSize;
-    private Button btnAddUser, btnGetUser, btnDeleteUser, btnGetAllUsers;
+    private Button btnAddUser, btnGetUser, btnDeleteUser, btnGetAllUsers, btnRefreshUsers;
     private Button btnAddProduct, btnGetProduct, btnDeleteProduct, btnGetAllProducts;
-    private Button btnClearAll;
-    private TextView tvResults;
+    private Button btnClearAll, btnTestCart, btnAddToCart;
+    private TextView tvResults, tvUserDatabase;
 
     // Repository instances
     private UserRepository userRepository;
     private ProductRepository productRepository;
+    private OrderRepository orderRepository;
+    
+    // Date formatter for better display
+    private SimpleDateFormat dateFormat;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_database_test);
 
+        dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
+        
         initializeViews();
         initializeRepositories();
         setupClickListeners();
 
         appendResult("=== Firebase Realtime Database Test Started ===\n");
+        
+        // Auto-refresh user database on startup
+        refreshUserDatabase();
+    }
+    
+    private void refreshUserDatabase() {
+        appendResult("\n--- Refreshing User Database ---");
+
+        userRepository.getAllUsers(new UserRepository.UserListCallback() {
+            @Override
+            public void onSuccess(List<User> users) {
+                runOnUiThread(() -> {
+                    displayUserDatabase(users);
+                    appendResult("✅ User database refreshed - " + users.size() + " users found");
+                });
+            }
+
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    tvUserDatabase.setText("❌ Error loading users: " + error);
+                    appendResult("❌ Error refreshing user database: " + error);
+                });
+            }
+        });
+    }
+
+    private void displayUserDatabase(List<User> users) {
+        if (users.isEmpty()) {
+            tvUserDatabase.setText("No users found in database");
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("📊 USER DATABASE (").append(users.size()).append(" users)\n");
+        sb.append("=".repeat(50)).append("\n\n");
+
+        for (int i = 0; i < users.size(); i++) {
+            User user = users.get(i);
+            sb.append("👤 User #").append(i + 1).append("\n");
+            sb.append("   ID: ").append(user.id).append("\n");
+            sb.append("   Name: ").append(user.name).append("\n");
+            sb.append("   Email: ").append(user.email != null ? user.email : "N/A").append("\n");
+            sb.append("   Phone: ").append(user.phone_number != null ? user.phone_number : "N/A").append("\n");
+            sb.append("   Address: ").append(user.address != null ? user.address : "N/A").append("\n");
+            sb.append("   Status: ").append(user.is_banned ? "🚫 BANNED" : "✅ ACTIVE").append("\n");
+            sb.append("   Created: ").append(formatDate(user.created_date)).append("\n");
+            sb.append("   Updated: ").append(formatDate(user.updated_date)).append("\n");
+            sb.append("   Avatar: ").append(user.avatar != null && !user.avatar.isEmpty() ? "✅ Set" : "❌ Not set").append("\n");
+            sb.append("-".repeat(30)).append("\n\n");
+        }
+
+        tvUserDatabase.setText(sb.toString());
+    }
+
+    private String formatDate(long timestamp) {
+        if (timestamp == 0) return "N/A";
+        return dateFormat.format(new Date(timestamp));
     }
 
     private void initializeViews() {
@@ -57,6 +128,7 @@ public class DatabaseTestActivity extends AppCompatActivity {
         btnGetUser = findViewById(R.id.btnGetUser);
         btnDeleteUser = findViewById(R.id.btnDeleteUser);
         btnGetAllUsers = findViewById(R.id.btnGetAllUsers);
+        btnRefreshUsers = findViewById(R.id.btnRefreshUsers);
 
         // Product buttons
         btnAddProduct = findViewById(R.id.btnAddProduct);
@@ -66,14 +138,18 @@ public class DatabaseTestActivity extends AppCompatActivity {
 
         // Other buttons
         btnClearAll = findViewById(R.id.btnClearAll);
+        btnTestCart = findViewById(R.id.btnTestCart);
+        btnAddToCart = findViewById(R.id.btnAddToCart);
 
         // Result display
         tvResults = findViewById(R.id.tvResults);
+        tvUserDatabase = findViewById(R.id.tvUserDatabase);
     }
 
     private void initializeRepositories() {
         userRepository = new UserRepository();
         productRepository = new ProductRepository();
+        orderRepository = new OrderRepository();
     }
 
     private void setupClickListeners() {
@@ -82,6 +158,7 @@ public class DatabaseTestActivity extends AppCompatActivity {
         btnGetUser.setOnClickListener(v -> getUser());
         btnDeleteUser.setOnClickListener(v -> deleteUser());
         btnGetAllUsers.setOnClickListener(v -> getAllUsers());
+        btnRefreshUsers.setOnClickListener(v -> refreshUserDatabase());
 
         // Product operations
         btnAddProduct.setOnClickListener(v -> addProduct());
@@ -91,6 +168,10 @@ public class DatabaseTestActivity extends AppCompatActivity {
 
         // Clear all
         btnClearAll.setOnClickListener(v -> clearAllData());
+        
+        // Cart testing
+        btnTestCart.setOnClickListener(v -> testCart());
+        btnAddToCart.setOnClickListener(v -> addToCart());
     }
 
     private void addUser() {
@@ -423,5 +504,63 @@ public class DatabaseTestActivity extends AppCompatActivity {
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+    
+    private void testCart() {
+        Intent intent = new Intent(DatabaseTestActivity.this, CartActivity.class);
+        startActivity(intent);
+    }
+    
+    private void addToCart() {
+        String productId = etProductId.getText().toString().trim();
+        String userId = etUserId.getText().toString().trim();
+        
+        if (productId.isEmpty()) {
+            showToast("Please enter Product ID");
+            return;
+        }
+        
+        if (userId.isEmpty()) {
+            showToast("Please enter User ID");
+            return;
+        }
+        
+        // Create a test order
+        Order order = new Order();
+        order.id = "order_" + UUID.randomUUID().toString().substring(0, 8);
+        order.product_id = productId;
+        order.user_id = userId;
+        order.amount = 1;
+        order.total_price = 100.0; // Default price
+        order.status = StatusEnum.IS_IN_CART.name();
+        order.short_code = "TEST" + order.id.substring(0, 4);
+        order.shipping_address = "Test Address";
+        order.shipping_phone = "1234567890";
+        order.note = "Test order from DatabaseTestActivity";
+        order.created_date = System.currentTimeMillis();
+        order.updated_date = System.currentTimeMillis();
+        
+        appendResult("\n--- Adding to Cart ---");
+        appendResult("Order ID: " + order.id);
+        appendResult("Product ID: " + order.product_id);
+        appendResult("User ID: " + order.user_id);
+        
+        orderRepository.saveOrder(order, new OrderRepository.OrderCallback() {
+            @Override
+            public void onSuccess(Order savedOrder) {
+                runOnUiThread(() -> {
+                    appendResult("✅ Added to cart successfully!");
+                    showToast("Added to cart!");
+                });
+            }
+            
+            @Override
+            public void onError(String error) {
+                runOnUiThread(() -> {
+                    appendResult("❌ Error adding to cart: " + error);
+                    showToast("Error: " + error);
+                });
+            }
+        });
     }
 }
