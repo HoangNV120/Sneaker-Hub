@@ -8,11 +8,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -91,12 +91,12 @@ public class AddEditProductActivity extends AppCompatActivity implements Product
     }
 
     private void setupToolbar() {
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle(isEditMode ? "Edit Product" : "Add New Product");
-        }
+        // Remove toolbar setup since we're using custom header
+        ImageView btnBack = findViewById(R.id.btn_back);
+        TextView headerTitle = findViewById(R.id.header_title);
+
+        btnBack.setOnClickListener(v -> finish());
+        headerTitle.setText(isEditMode ? "Edit Product" : "Add New Product");
     }
 
     private void setupRecyclerView() {

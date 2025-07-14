@@ -56,7 +56,6 @@ public class ProfileFragment extends Fragment {
         textAdminRole = view.findViewById(R.id.text_admin_role);
         btnEditProfile = view.findViewById(R.id.btn_edit_profile);
         btnChangePassword = view.findViewById(R.id.btn_change_password);
-        btnSettings = view.findViewById(R.id.btn_settings);
         btnLogout = view.findViewById(R.id.btn_logout);
     }
 

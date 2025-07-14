@@ -3,7 +3,6 @@ package com.prm392_g1.sneakerhub.fragments;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +12,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -43,7 +41,6 @@ import static android.app.Activity.RESULT_OK;
 public class ManageFragment extends Fragment implements ProductAdapter.OnProductClickListener, OrderAdapter.OnOrderClickListener, UserAdapter.OnUserClickListener {
 
     private TabLayout tabLayout;
-    private SearchView searchView;
     private RecyclerView recyclerView;
     private FloatingActionButton fabAdd;
 
@@ -95,14 +92,12 @@ public class ManageFragment extends Fragment implements ProductAdapter.OnProduct
         setupRepositories();
         setupAdapters();
         setupTabLayout();
-        setupSearchView();
         setupFab();
         loadInitialData();
     }
 
     private void initializeViews(View view) {
         tabLayout = view.findViewById(R.id.tab_layout);
-        searchView = view.findViewById(R.id.search_view);
         recyclerView = view.findViewById(R.id.recycler_products);
         fabAdd = view.findViewById(R.id.fab_add);
     }
@@ -146,26 +141,6 @@ public class ManageFragment extends Fragment implements ProductAdapter.OnProduct
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {}
-        });
-    }
-
-    private void setupSearchView() {
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                performSearch(query);
-                return true;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                if (TextUtils.isEmpty(newText)) {
-                    showAllItemsForCurrentTab();
-                } else {
-                    performSearch(newText);
-                }
-                return true;
-            }
         });
     }
 
@@ -250,89 +225,16 @@ public class ManageFragment extends Fragment implements ProductAdapter.OnProduct
                 recyclerView.setAdapter(productAdapter);
                 productAdapter.setProducts(allProducts);
                 fabAdd.show();
-                searchView.setQueryHint("Search products...");
                 break;
             case "Orders":
                 recyclerView.setAdapter(orderAdapter);
                 orderAdapter.setOrders(allOrders);
                 fabAdd.hide();
-                searchView.setQueryHint("Search orders...");
                 break;
             case "Users":
                 recyclerView.setAdapter(userAdapter);
                 userAdapter.setUsers(allUsers);
                 fabAdd.hide();
-                searchView.setQueryHint("Search users...");
-                break;
-        }
-    }
-
-    private void performSearch(String query) {
-        switch (currentTab) {
-            case "Products":
-                searchProducts(query);
-                break;
-            case "Orders":
-                searchOrders(query);
-                break;
-            case "Users":
-                searchUsers(query);
-                break;
-        }
-    }
-
-    private void searchProducts(String query) {
-        // Search in product name and description
-        if (TextUtils.isEmpty(query)) {
-            productAdapter.setProducts(allProducts);
-            return;
-        }
-
-        List<Product> filteredProducts = new ArrayList<>();
-        for (Product product : allProducts) {
-            // Search in product name and description
-            if ((product.name != null && product.name.toLowerCase().contains(query.toLowerCase())) ||
-                (product.description != null && product.description.toLowerCase().contains(query.toLowerCase()))) {
-                filteredProducts.add(product);
-            }
-        }
-        productAdapter.setProducts(filteredProducts);
-    }
-
-    private void searchOrders(String query) {
-        List<Order> filteredOrders = new ArrayList<>();
-        for (Order order : allOrders) {
-            if (order.short_code.toLowerCase().contains(query.toLowerCase()) ||
-                order.status.toLowerCase().contains(query.toLowerCase()) ||
-                order.user_id.toLowerCase().contains(query.toLowerCase())) {
-                filteredOrders.add(order);
-            }
-        }
-        orderAdapter.setOrders(filteredOrders);
-    }
-
-    private void searchUsers(String query) {
-        List<User> filteredUsers = new ArrayList<>();
-        for (User user : allUsers) {
-            if ((user.name != null && user.name.toLowerCase().contains(query.toLowerCase())) ||
-                (user.email != null && user.email.toLowerCase().contains(query.toLowerCase())) ||
-                (user.phone_number != null && user.phone_number.toLowerCase().contains(query.toLowerCase()))) {
-                filteredUsers.add(user);
-            }
-        }
-        userAdapter.setUsers(filteredUsers);
-    }
-
-    private void showAllItemsForCurrentTab() {
-        switch (currentTab) {
-            case "Products":
-                productAdapter.setProducts(allProducts);
-                break;
-            case "Orders":
-                orderAdapter.setOrders(allOrders);
-                break;
-            case "Users":
-                userAdapter.setUsers(allUsers);
                 break;
         }
     }

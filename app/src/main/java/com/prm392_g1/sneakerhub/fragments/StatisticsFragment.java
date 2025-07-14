@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -24,16 +25,17 @@ import com.google.android.material.tabs.TabLayout;
 import com.prm392_g1.sneakerhub.R;
 import com.prm392_g1.sneakerhub.entities.Order;
 import com.prm392_g1.sneakerhub.entities.Product;
+import com.prm392_g1.sneakerhub.entities.ProductVariant;
 import com.prm392_g1.sneakerhub.entities.User;
 import com.prm392_g1.sneakerhub.repositories.OrderRepository;
 import com.prm392_g1.sneakerhub.repositories.ProductRepository;
 import com.prm392_g1.sneakerhub.repositories.UserRepository;
+import com.prm392_g1.sneakerhub.utils.ProductUtils;
 
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -54,6 +56,9 @@ public class StatisticsFragment extends Fragment {
     private List<Order> allOrders = new ArrayList<>();
     private List<Product> allProducts = new ArrayList<>();
     private List<User> allUsers = new ArrayList<>();
+    private Map<String, List<ProductVariant>> productVariants = new HashMap<>();
+
+    private String[] periodOptions = {"Daily", "Weekly", "Monthly", "Yearly"};
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -87,7 +92,8 @@ public class StatisticsFragment extends Fragment {
     }
 
     private void setupTabLayout() {
-        // Add tabs for different statistics views
+        // Clear existing tabs and add new ones
+        tabLayout.removeAllTabs();
         tabLayout.addTab(tabLayout.newTab().setText("Sales"));
         tabLayout.addTab(tabLayout.newTab().setText("Products"));
         tabLayout.addTab(tabLayout.newTab().setText("Customers"));
@@ -95,21 +101,14 @@ public class StatisticsFragment extends Fragment {
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
-                // Update the chart based on selected tab
-                String period = periodSpinner.getSelectedItem().toString();
-                String tabName = tab.getText().toString();
-                updateChartData(tabName, period);
+                updateChartData(tab.getText().toString(), periodSpinner.getSelectedItem().toString());
             }
 
             @Override
-            public void onTabUnselected(TabLayout.Tab tab) {
-                // Not needed
-            }
+            public void onTabUnselected(TabLayout.Tab tab) {}
 
             @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-                // Not needed
-            }
+            public void onTabReselected(TabLayout.Tab tab) {}
         });
     }
 
@@ -129,21 +128,32 @@ public class StatisticsFragment extends Fragment {
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setDrawGridLines(false);
         xAxis.setGranularity(1f);
+        xAxis.setTextColor(Color.BLACK);
+
+        // Configure Y axes
+        salesChart.getAxisLeft().setTextColor(Color.BLACK);
+        salesChart.getAxisRight().setEnabled(false);
     }
 
     private void setupPeriodSpinner() {
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
+            android.R.layout.simple_spinner_item, periodOptions);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        periodSpinner.setAdapter(adapter);
+        periodSpinner.setSelection(2); // Default to "Monthly"
+
         periodSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String period = parent.getItemAtPosition(position).toString();
-                String tabName = tabLayout.getTabAt(tabLayout.getSelectedTabPosition()).getText().toString();
-                updateChartData(tabName, period);
+                String period = periodOptions[position];
+                TabLayout.Tab selectedTab = tabLayout.getTabAt(tabLayout.getSelectedTabPosition());
+                if (selectedTab != null) {
+                    updateChartData(selectedTab.getText().toString(), period);
+                }
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                // Not needed
-            }
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
 
@@ -165,6 +175,9 @@ public class StatisticsFragment extends Fragment {
             @Override
             public void onError(String error) {
                 Toast.makeText(getContext(), "Error loading orders: " + error, Toast.LENGTH_SHORT).show();
+                // Show empty data
+                allOrders = new ArrayList<>();
+                updateSummaryStatistics();
             }
         });
     }
@@ -174,13 +187,34 @@ public class StatisticsFragment extends Fragment {
             @Override
             public void onSuccess(List<Product> products) {
                 allProducts = products;
+                loadProductVariants();
             }
 
             @Override
             public void onError(String error) {
                 Toast.makeText(getContext(), "Error loading products: " + error, Toast.LENGTH_SHORT).show();
+                allProducts = new ArrayList<>();
             }
         });
+    }
+
+    private void loadProductVariants() {
+        if (allProducts.isEmpty()) return;
+
+        for (Product product : allProducts) {
+            productRepository.getVariantsByProductId(product.id, new ProductRepository.VariantListCallback() {
+                @Override
+                public void onSuccess(List<ProductVariant> variants) {
+                    productVariants.put(product.id, variants);
+                }
+
+                @Override
+                public void onError(String error) {
+                    // Continue without variants for this product
+                    productVariants.put(product.id, new ArrayList<>());
+                }
+            });
+        }
     }
 
     private void loadUsers() {
@@ -193,20 +227,24 @@ public class StatisticsFragment extends Fragment {
             @Override
             public void onError(String error) {
                 Toast.makeText(getContext(), "Error loading users: " + error, Toast.LENGTH_SHORT).show();
+                allUsers = new ArrayList<>();
             }
         });
     }
 
     private void updateSummaryStatistics() {
         double totalSalesAmount = 0;
+        int validOrderCount = 0;
+
         for (Order order : allOrders) {
-            if (!"cancelled".equalsIgnoreCase(order.status)) {
+            if (order.status != null && !"cancelled".equalsIgnoreCase(order.status)) {
                 totalSalesAmount += order.total_price;
+                validOrderCount++;
             }
         }
 
         totalSales.setText(NumberFormat.getCurrencyInstance(Locale.US).format(totalSalesAmount));
-        totalOrders.setText(String.valueOf(allOrders.size()));
+        totalOrders.setText(String.valueOf(validOrderCount));
     }
 
     private void updateChartData(String tabName, String period) {
@@ -223,102 +261,55 @@ public class StatisticsFragment extends Fragment {
             case "Customers":
                 generateCustomerData(entries, labels, period);
                 break;
+            default:
+                generateSalesData(entries, labels, period);
+                break;
+        }
+
+        // Handle empty data
+        if (entries.isEmpty()) {
+            // Add default empty data points
+            for (int i = 0; i < 7; i++) {
+                entries.add(new Entry(i, 0));
+                labels.add("No Data");
+            }
         }
 
         // Format X axis with appropriate labels
         XAxis xAxis = salesChart.getXAxis();
         xAxis.setValueFormatter(new IndexAxisValueFormatter(labels));
+        xAxis.setLabelCount(Math.min(labels.size(), 7), false);
 
         // Create dataset and set appearance
         LineDataSet dataSet = new LineDataSet(entries, tabName);
-        dataSet.setColor(Color.BLUE);
-        dataSet.setCircleColor(Color.BLUE);
-        dataSet.setLineWidth(2f);
-        dataSet.setCircleRadius(4f);
-        dataSet.setDrawValues(false);
+        dataSet.setColor(Color.parseColor("#2196F3"));
+        dataSet.setCircleColor(Color.parseColor("#2196F3"));
+        dataSet.setLineWidth(3f);
+        dataSet.setCircleRadius(6f);
+        dataSet.setDrawValues(true);
+        dataSet.setValueTextColor(Color.BLACK);
+        dataSet.setValueTextSize(10f);
         dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
         dataSet.setDrawFilled(true);
-        dataSet.setFillColor(Color.parseColor("#80D6EAFF"));
+        dataSet.setFillColor(Color.parseColor("#802196F3"));
 
         // Apply to chart
         LineData lineData = new LineData(dataSet);
         salesChart.setData(lineData);
+        salesChart.animateX(1000);
         salesChart.invalidate(); // Refresh
     }
 
     private void generateSalesData(List<Entry> entries, List<String> labels, String period) {
-        Map<String, Double> salesByPeriod = new HashMap<>();
-        Calendar calendar = Calendar.getInstance();
-        SimpleDateFormat labelFormat;
-
-        switch (period) {
-            case "Daily":
-                labelFormat = new SimpleDateFormat("MMM dd", Locale.getDefault());
-                // Group sales by day for last 7 days
-                for (int i = 6; i >= 0; i--) {
-                    calendar.setTimeInMillis(System.currentTimeMillis());
-                    calendar.add(Calendar.DAY_OF_YEAR, -i);
-                    String dayKey = labelFormat.format(calendar.getTime());
-                    salesByPeriod.put(dayKey, 0.0);
-                }
-                break;
-
-            case "Weekly":
-                labelFormat = new SimpleDateFormat("MMM dd", Locale.getDefault());
-                // Group sales by week for last 4 weeks
-                for (int i = 3; i >= 0; i--) {
-                    calendar.setTimeInMillis(System.currentTimeMillis());
-                    calendar.add(Calendar.WEEK_OF_YEAR, -i);
-                    String weekKey = "Week " + labelFormat.format(calendar.getTime());
-                    salesByPeriod.put(weekKey, 0.0);
-                }
-                break;
-
-            case "Monthly":
-                labelFormat = new SimpleDateFormat("MMM yyyy", Locale.getDefault());
-                // Group sales by month for last 12 months
-                for (int i = 11; i >= 0; i--) {
-                    calendar.setTimeInMillis(System.currentTimeMillis());
-                    calendar.add(Calendar.MONTH, -i);
-                    String monthKey = labelFormat.format(calendar.getTime());
-                    salesByPeriod.put(monthKey, 0.0);
-                }
-                break;
-
-            case "Yearly":
-                labelFormat = new SimpleDateFormat("yyyy", Locale.getDefault());
-                // Group sales by year for last 5 years
-                for (int i = 4; i >= 0; i--) {
-                    calendar.setTimeInMillis(System.currentTimeMillis());
-                    calendar.add(Calendar.YEAR, -i);
-                    String yearKey = labelFormat.format(calendar.getTime());
-                    salesByPeriod.put(yearKey, 0.0);
-                }
-                break;
-        }
+        Map<String, Double> salesByPeriod = createPeriodMap(period);
+        SimpleDateFormat labelFormat = getLabelFormat(period);
 
         // Calculate actual sales for each period
         for (Order order : allOrders) {
-            if (!"cancelled".equalsIgnoreCase(order.status)) {
+            if (order.status != null && !"cancelled".equalsIgnoreCase(order.status) && order.created_date > 0) {
+                Calendar calendar = Calendar.getInstance();
                 calendar.setTimeInMillis(order.created_date);
-                String periodKey;
-
-                switch (period) {
-                    case "Daily":
-                        periodKey = new SimpleDateFormat("MMM dd", Locale.getDefault()).format(calendar.getTime());
-                        break;
-                    case "Weekly":
-                        periodKey = "Week " + new SimpleDateFormat("MMM dd", Locale.getDefault()).format(calendar.getTime());
-                        break;
-                    case "Monthly":
-                        periodKey = new SimpleDateFormat("MMM yyyy", Locale.getDefault()).format(calendar.getTime());
-                        break;
-                    case "Yearly":
-                        periodKey = new SimpleDateFormat("yyyy", Locale.getDefault()).format(calendar.getTime());
-                        break;
-                    default:
-                        continue;
-                }
+                String periodKey = formatPeriodKey(calendar, period, labelFormat);
 
                 if (salesByPeriod.containsKey(periodKey)) {
                     salesByPeriod.put(periodKey, salesByPeriod.get(periodKey) + order.total_price);
@@ -326,59 +317,25 @@ public class StatisticsFragment extends Fragment {
             }
         }
 
-        // Convert to chart data
-        int index = 0;
-        for (Map.Entry<String, Double> entry : salesByPeriod.entrySet()) {
-            entries.add(new Entry(index, entry.getValue().floatValue()));
-            labels.add(entry.getKey());
-            index++;
-        }
+        convertToChartData(salesByPeriod, entries, labels);
     }
 
     private void generateProductData(List<Entry> entries, List<String> labels, String period) {
-        // For products, show number of new products added in each period
         Map<String, Integer> productsByPeriod = new HashMap<>();
-        Calendar calendar = Calendar.getInstance();
-        SimpleDateFormat labelFormat;
+        initializePeriodMapForProducts(productsByPeriod, period);
 
-        switch (period) {
-            case "Daily":
-                labelFormat = new SimpleDateFormat("MMM dd", Locale.getDefault());
-                for (int i = 6; i >= 0; i--) {
-                    calendar.setTimeInMillis(System.currentTimeMillis());
-                    calendar.add(Calendar.DAY_OF_YEAR, -i);
-                    String dayKey = labelFormat.format(calendar.getTime());
-                    productsByPeriod.put(dayKey, 0);
-                }
-                break;
-            case "Monthly":
-                labelFormat = new SimpleDateFormat("MMM yyyy", Locale.getDefault());
-                for (int i = 11; i >= 0; i--) {
-                    calendar.setTimeInMillis(System.currentTimeMillis());
-                    calendar.add(Calendar.MONTH, -i);
-                    String monthKey = labelFormat.format(calendar.getTime());
-                    productsByPeriod.put(monthKey, 0);
-                }
-                break;
-            default:
-                // Default to monthly for other periods
-                labelFormat = new SimpleDateFormat("MMM yyyy", Locale.getDefault());
-                for (int i = 5; i >= 0; i--) {
-                    calendar.setTimeInMillis(System.currentTimeMillis());
-                    calendar.add(Calendar.MONTH, -i);
-                    String monthKey = labelFormat.format(calendar.getTime());
-                    productsByPeriod.put(monthKey, 0);
-                }
-                break;
-        }
+        SimpleDateFormat labelFormat = getLabelFormat(period);
 
         // Count products added in each period
         for (Product product : allProducts) {
-            calendar.setTimeInMillis(product.created_date);
-            String periodKey = labelFormat.format(calendar.getTime());
+            if (product.created_date > 0) {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTimeInMillis(product.created_date);
+                String periodKey = formatPeriodKey(calendar, period, labelFormat);
 
-            if (productsByPeriod.containsKey(periodKey)) {
-                productsByPeriod.put(periodKey, productsByPeriod.get(periodKey) + 1);
+                if (productsByPeriod.containsKey(periodKey)) {
+                    productsByPeriod.put(periodKey, productsByPeriod.get(periodKey) + 1);
+                }
             }
         }
 
@@ -392,55 +349,26 @@ public class StatisticsFragment extends Fragment {
     }
 
     private void generateCustomerData(List<Entry> entries, List<String> labels, String period) {
-        // For customers, show number of new registrations in each period
-        // Since User entity doesn't have created_date, we'll simulate with order data
         Map<String, Integer> customersByPeriod = new HashMap<>();
-        Calendar calendar = Calendar.getInstance();
-        SimpleDateFormat labelFormat;
+        initializePeriodMapForCustomers(customersByPeriod, period);
 
-        switch (period) {
-            case "Daily":
-                labelFormat = new SimpleDateFormat("MMM dd", Locale.getDefault());
-                for (int i = 6; i >= 0; i--) {
-                    calendar.setTimeInMillis(System.currentTimeMillis());
-                    calendar.add(Calendar.DAY_OF_YEAR, -i);
-                    String dayKey = labelFormat.format(calendar.getTime());
-                    customersByPeriod.put(dayKey, 0);
-                }
-                break;
-            case "Monthly":
-                labelFormat = new SimpleDateFormat("MMM yyyy", Locale.getDefault());
-                for (int i = 11; i >= 0; i--) {
-                    calendar.setTimeInMillis(System.currentTimeMillis());
-                    calendar.add(Calendar.MONTH, -i);
-                    String monthKey = labelFormat.format(calendar.getTime());
-                    customersByPeriod.put(monthKey, 0);
-                }
-                break;
-            default:
-                // Default to monthly
-                labelFormat = new SimpleDateFormat("MMM yyyy", Locale.getDefault());
-                for (int i = 5; i >= 0; i--) {
-                    calendar.setTimeInMillis(System.currentTimeMillis());
-                    calendar.add(Calendar.MONTH, -i);
-                    String monthKey = labelFormat.format(calendar.getTime());
-                    customersByPeriod.put(monthKey, 0);
-                }
-                break;
-        }
+        SimpleDateFormat labelFormat = getLabelFormat(period);
 
         // Count unique customers per period based on their first order
         Map<String, Long> firstOrderByUser = new HashMap<>();
         for (Order order : allOrders) {
-            if (!firstOrderByUser.containsKey(order.user_id) ||
-                order.created_date < firstOrderByUser.get(order.user_id)) {
-                firstOrderByUser.put(order.user_id, order.created_date);
+            if (order.user_id != null && order.created_date > 0) {
+                if (!firstOrderByUser.containsKey(order.user_id) ||
+                    order.created_date < firstOrderByUser.get(order.user_id)) {
+                    firstOrderByUser.put(order.user_id, order.created_date);
+                }
             }
         }
 
         for (Long firstOrderDate : firstOrderByUser.values()) {
+            Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(firstOrderDate);
-            String periodKey = labelFormat.format(calendar.getTime());
+            String periodKey = formatPeriodKey(calendar, period, labelFormat);
 
             if (customersByPeriod.containsKey(periodKey)) {
                 customersByPeriod.put(periodKey, customersByPeriod.get(periodKey) + 1);
@@ -450,6 +378,106 @@ public class StatisticsFragment extends Fragment {
         // Convert to chart data
         int index = 0;
         for (Map.Entry<String, Integer> entry : customersByPeriod.entrySet()) {
+            entries.add(new Entry(index, entry.getValue().floatValue()));
+            labels.add(entry.getKey());
+            index++;
+        }
+    }
+
+    private Map<String, Double> createPeriodMap(String period) {
+        Map<String, Double> map = new HashMap<>();
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat labelFormat = getLabelFormat(period);
+
+        int periodCount = getPeriodCount(period);
+        int calendarField = getCalendarField(period);
+
+        for (int i = periodCount - 1; i >= 0; i--) {
+            calendar.setTimeInMillis(System.currentTimeMillis());
+            calendar.add(calendarField, -i);
+            String key = formatPeriodKey(calendar, period, labelFormat);
+            map.put(key, 0.0);
+        }
+
+        return map;
+    }
+
+    private void initializePeriodMapForProducts(Map<String, Integer> map, String period) {
+        Calendar calendar = Calendar.getInstance();
+        SimpleDateFormat labelFormat = getLabelFormat(period);
+
+        int periodCount = getPeriodCount(period);
+        int calendarField = getCalendarField(period);
+
+        for (int i = periodCount - 1; i >= 0; i--) {
+            calendar.setTimeInMillis(System.currentTimeMillis());
+            calendar.add(calendarField, -i);
+            String key = formatPeriodKey(calendar, period, labelFormat);
+            map.put(key, 0);
+        }
+    }
+
+    private void initializePeriodMapForCustomers(Map<String, Integer> map, String period) {
+        initializePeriodMapForProducts(map, period); // Same logic
+    }
+
+    private SimpleDateFormat getLabelFormat(String period) {
+        switch (period) {
+            case "Daily":
+                return new SimpleDateFormat("MMM dd", Locale.getDefault());
+            case "Weekly":
+                return new SimpleDateFormat("MMM dd", Locale.getDefault());
+            case "Monthly":
+                return new SimpleDateFormat("MMM yyyy", Locale.getDefault());
+            case "Yearly":
+                return new SimpleDateFormat("yyyy", Locale.getDefault());
+            default:
+                return new SimpleDateFormat("MMM yyyy", Locale.getDefault());
+        }
+    }
+
+    private int getPeriodCount(String period) {
+        switch (period) {
+            case "Daily":
+                return 7;
+            case "Weekly":
+                return 4;
+            case "Monthly":
+                return 6;
+            case "Yearly":
+                return 3;
+            default:
+                return 6;
+        }
+    }
+
+    private int getCalendarField(String period) {
+        switch (period) {
+            case "Daily":
+                return Calendar.DAY_OF_YEAR;
+            case "Weekly":
+                return Calendar.WEEK_OF_YEAR;
+            case "Monthly":
+                return Calendar.MONTH;
+            case "Yearly":
+                return Calendar.YEAR;
+            default:
+                return Calendar.MONTH;
+        }
+    }
+
+    private String formatPeriodKey(Calendar calendar, String period, SimpleDateFormat labelFormat) {
+        switch (period) {
+            case "Weekly":
+                return "W" + calendar.get(Calendar.WEEK_OF_YEAR);
+            default:
+                return labelFormat.format(calendar.getTime());
+        }
+    }
+
+    private void convertToChartData(Map<String, Double> dataMap, List<Entry> entries, List<String> labels) {
+        int index = 0;
+        for (Map.Entry<String, Double> entry : dataMap.entrySet()) {
             entries.add(new Entry(index, entry.getValue().floatValue()));
             labels.add(entry.getKey());
             index++;
