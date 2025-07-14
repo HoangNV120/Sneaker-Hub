@@ -263,8 +263,6 @@ public class DatabaseTestActivity extends AppCompatActivity {
         product.name = productName;
         product.description = "Test sneaker description";
         product.price = productPrice.isEmpty() ? 100.0 : Double.parseDouble(productPrice);
-        product.size = productSize.isEmpty() ? "SIZE_42" : productSize;
-        product.colour = "BLACK";
         product.image = "";
         product.created_date = System.currentTimeMillis();
         product.updated_date = System.currentTimeMillis();
@@ -313,13 +311,10 @@ public class DatabaseTestActivity extends AppCompatActivity {
                     appendResult("Name: " + product.name);
                     appendResult("Description: " + product.description);
                     appendResult("Price: $" + product.price);
-                    appendResult("Size: " + product.size);
-                    appendResult("Colour: " + product.colour);
 
                     // Fill the form with retrieved data
                     etProductName.setText(product.name);
                     etProductPrice.setText(String.valueOf(product.price));
-                    etProductSize.setText(product.size);
 
                     showToast("Product retrieved successfully!");
                 });

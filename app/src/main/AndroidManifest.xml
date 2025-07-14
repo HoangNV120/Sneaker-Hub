@@ -28,6 +28,8 @@
             android:name=".DatabaseTestActivity"
             android:exported="true"
             android:label="Database Test" />
+        <activity android:name=".AddEditProductActivity"
+            android:exported="true" />
         <activity
             android:name=".LoginActivity"
             android:exported="true"/>
