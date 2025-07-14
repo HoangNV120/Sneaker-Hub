@@ -1,5 +1,7 @@
 package com.prm392_g1.sneakerhub.repositories;
 
+import android.util.Log;
+
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
@@ -29,6 +31,11 @@ public class UserRepository {
     public interface UserListCallback {
         void onSuccess(List<User> users);
         void onError(String error);
+    }
+
+    public interface DataCallback<T> {
+        void onSuccess(T data);
+        void onError(String message);
     }
 
     // Create or update user
@@ -93,4 +100,37 @@ public class UserRepository {
             .addOnSuccessListener(aVoid -> callback.onSuccess(null))
             .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
+
+    public <T> void getChildByKey(String key, String value, Class<T> clazz, DataCallback<T> callback) {
+        databaseReference.orderByChild(key).equalTo(value).addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        if (!dataSnapshot.exists()) {
+                            Log.d("AuthService", "User not found");
+                            Log.d("AuthService", "DataSnapshot: " + dataSnapshot);
+                            callback.onError("User not found");
+                            return;
+                        }
+
+                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                            T data = snapshot.getValue(clazz);
+                            if (data != null) {
+                                Log.d("Firebase", "Data found: " + data);
+                                callback.onSuccess(data);
+                                return;
+                            }
+                        }
+
+                        Log.d("Firebase", "Data is null for: " + value);
+                        callback.onError("Data is null");
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        Log.e("Firebase", "Database error: " + databaseError.getMessage());
+                        callback.onError(databaseError.getMessage());
+                    }
+                });
+    }
+
 }

@@ -5,6 +5,7 @@ public class User {
     public String name;
     public String address;
     public String email;
+    private String password;
     public String phone_number;
     public long created_date;
     public long updated_date;
@@ -12,4 +13,12 @@ public class User {
     public boolean is_banned;
 
     public User() {}
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }
