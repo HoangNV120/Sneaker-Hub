@@ -33,7 +33,7 @@ public class UserRoleRepository {
 
     // Save user role
     public void saveUserRole(UserRole userRole, UserRoleCallback callback) {
-        databaseReference.child(userRole.id).setValue(userRole)
+        databaseReference.child(userRole.getUser_id()).setValue(userRole)
             .addOnSuccessListener(aVoid -> callback.onSuccess(userRole))
             .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }

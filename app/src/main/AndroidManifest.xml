@@ -28,6 +28,15 @@
             android:name=".DatabaseTestActivity"
             android:exported="true"
             android:label="Database Test" />
+        <activity
+            android:name=".LoginActivity"
+            android:exported="true"/>
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ForgotPasswordActivity"
+            android:exported="false" />
     </application>
 
 </manifest>
