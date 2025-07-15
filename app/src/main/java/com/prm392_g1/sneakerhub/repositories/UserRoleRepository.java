@@ -40,18 +40,19 @@ public class UserRoleRepository {
 
     // Get user roles by user ID
     public void getUserRolesByUserId(String userId, UserRoleListCallback callback) {
-        databaseReference.orderByChild("user_id").equalTo(userId)
-            .addListenerForSingleValueEvent(new ValueEventListener() {
+        databaseReference.child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    List<UserRole> userRoles = new ArrayList<>();
-                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                        UserRole userRole = snapshot.getValue(UserRole.class);
-                        if (userRole != null) {
-                            userRoles.add(userRole);
-                        }
-                    }
-                    callback.onSuccess(userRoles);
+                    UserRole role = new UserRole();
+                    role.setId(dataSnapshot.child("id").getValue(String.class));
+                    role.setUser_id(dataSnapshot.child("user_id").getValue(String.class));
+                    role.setRole_type(dataSnapshot.child("role_type").getValue(String.class));
+                    role.setCreated_date(dataSnapshot.child("created_date").getValue(Long.class));
+                    role.setUpdated_date(dataSnapshot.child("updated_date").getValue(Long.class));
+
+                    List<UserRole> result = new ArrayList<>();
+                    result.add(role);
+                    callback.onSuccess(result);
                 }
 
                 @Override

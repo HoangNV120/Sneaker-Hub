@@ -21,7 +21,7 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 public class AuthService {
     private static final String JWT_SECRET = "quanuirhfehvh78222h3fh2398fhfwgeffu2378fh82h8723hf9wevub8w";
     private static final String PREF_NAME = "Authentication";
-    private static final String KEY_FIREBASE_LOGIN = "phone";
+    private static final String KEY_FIREBASE_PHONE = "phone_number";
     private final Context context;
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
@@ -38,7 +38,7 @@ public class AuthService {
     }
 
     public void authenticate(String phone, String password, AuthCallback callback) {
-        userRepository.getChildByKey(KEY_FIREBASE_LOGIN, phone, User.class, new UserRepository.DataCallback<User>() {
+        userRepository.getChildByKey(KEY_FIREBASE_PHONE, phone, User.class, new UserRepository.DataCallback<User>() {
             @Override
             public void onSuccess(User user) {
                 BCrypt.Result result = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
